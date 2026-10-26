@@ -4,6 +4,8 @@ import com.devcolab.auth.dto.AuthResponse;
 import com.devcolab.auth.dto.LoginRequest;
 import com.devcolab.auth.dto.RegisterRequest;
 import com.devcolab.auth.dto.UserResponse;
+import com.devcolab.auth.event.UserCreatedEvent;
+import com.devcolab.auth.kafka.KafkaProducerService;
 import com.devcolab.auth.model.User;
 import com.devcolab.auth.repository.UserRepository;
 import com.devcolab.auth.utils.JwtUtil;
@@ -20,6 +22,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final KafkaProducerService kafkaProducerService;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -36,7 +39,8 @@ public class AuthService {
         User savedUser = userRepository.save(user);
 
         String token = jwtUtil.generateToken(savedUser.getEmail(), savedUser.getId(), savedUser.isVerified());
-
+        UserCreatedEvent userCreatedEvent = new UserCreatedEvent(savedUser.getEmail());
+        kafkaProducerService.publishUserCreated(userCreatedEvent);
         return AuthResponse.builder()
                 .token(token)
                 .type("Bearer")

@@ -24,10 +24,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "Name is required")
-    @Column(nullable = false)
-    @JsonProperty("name")
-    @JsonAlias({"Name"})
+    @Column(nullable = true)
     private String name;
 
     @NotBlank(message = "Email is required")

@@ -4,6 +4,8 @@ import com.devcolab.auth.dto.AuthResponse;
 import com.devcolab.auth.dto.LoginRequest;
 import com.devcolab.auth.dto.RegisterRequest;
 import com.devcolab.auth.dto.UserResponse;
+import com.devcolab.auth.event.UserCreatedEvent;
+import com.devcolab.auth.kafka.KafkaProducerService;
 import com.devcolab.auth.model.User;
 import com.devcolab.auth.service.AuthService;
 import jakarta.validation.Valid;
@@ -20,6 +22,7 @@ public class AuthController {
 
     private final AuthService authService;
 
+
     @GetMapping("/hello")
     public ResponseEntity<String> hello(){
         return ResponseEntity.ok("Hello from auth");
@@ -28,6 +31,7 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         AuthResponse response = authService.register(request);
+
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 

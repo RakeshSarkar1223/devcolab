@@ -1,7 +1,9 @@
 package com.devcolab.user.service;
 
 import com.devcolab.user.dto.UserRequest;
+import com.devcolab.user.event.UserDeletedEvent;
 import com.devcolab.user.exception.ResourceNotFoundException;
+import com.devcolab.user.kafka.KafkaProducerService;
 import com.devcolab.user.model.User;
 import com.devcolab.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +17,7 @@ import java.util.List;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final KafkaProducerService kafkaProducerService;
 
     @Transactional
     public User createUser(UserRequest request) {
@@ -74,6 +77,8 @@ public class UserService {
     @Transactional
     public void deleteUser(Long id) {
         User user = getUserById(id);
+        String email = user.getEmail();
         userRepository.delete(user);
+        kafkaProducerService.publishUserDeleted(new UserDeletedEvent(email));
     }
 }
