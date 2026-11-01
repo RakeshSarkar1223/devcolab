@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { authApi, userApi, projectApi } from "@/lib/api";
+import { authApi, userApi, projectApi, notificationApi } from "@/lib/api";
 
 interface ServiceStatus {
   name: string;
@@ -37,6 +37,13 @@ export default function ServiceHealth() {
       expectedRoute: "lb://PROJECT-SERVICE (Port 8083)",
       status: "idle",
     },
+    {
+      name: "Notification Service",
+      endpoint: "/api/notifications/hello",
+      port: 8084,
+      expectedRoute: "lb://NOTIFICATION-SERVICE (Port 8084)",
+      status: "idle",
+    },
   ]);
 
   const [lastChecked, setLastChecked] = useState<string | null>(null);
@@ -52,6 +59,7 @@ export default function ServiceHealth() {
       if (index === 0) res = await authApi.hello();
       if (index === 1) res = await userApi.hello();
       if (index === 2) res = await projectApi.hello();
+      if (index === 3) res = await notificationApi.hello();
 
       const duration = Math.round(performance.now() - start);
       setServices((prev) =>
@@ -75,7 +83,12 @@ export default function ServiceHealth() {
   };
 
   const checkAll = async () => {
-    await Promise.all([checkService(0), checkService(1), checkService(2)]);
+    await Promise.all([
+      checkService(0),
+      checkService(1),
+      checkService(2),
+      checkService(3),
+    ]);
     setLastChecked(new Date().toLocaleTimeString());
   };
 
@@ -108,7 +121,7 @@ export default function ServiceHealth() {
           )}
           <button
             onClick={checkAll}
-            className="px-3.5 py-2 text-xs font-medium rounded-md bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 shadow-sm"
+            className="px-3.5 py-2 text-xs font-medium rounded-md bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 shadow-sm cursor-pointer"
           >
             Check All Services
           </button>
@@ -116,7 +129,7 @@ export default function ServiceHealth() {
       </div>
 
       {/* Services Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {services.map((svc, i) => {
           const isOnline = svc.status === "online";
           const isOffline = svc.status === "offline";
@@ -205,7 +218,7 @@ export default function ServiceHealth() {
               <button
                 onClick={() => checkService(i)}
                 disabled={isChecking}
-                className="mt-4 w-full py-1.5 text-xs font-medium rounded border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors"
+                className="mt-4 w-full py-1.5 text-xs font-medium rounded border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors cursor-pointer"
               >
                 {isChecking ? "Testing..." : "Test Endpoint"}
               </button>
@@ -223,11 +236,11 @@ export default function ServiceHealth() {
           If any service shows <code>Internal Server Error</code> or <code>Offline</code>, make sure each Spring Boot service is launched in the following order:
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
           <div className="p-3 rounded border border-zinc-100 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-800/40">
             <span className="font-semibold text-zinc-800 dark:text-zinc-200 block">1. Eureka Server</span>
             <code className="text-[11px] text-zinc-500 block mt-1">Port 8761</code>
-            <p className="text-[11px] text-zinc-500 mt-1">Start first so other services can register.</p>
+            <p className="text-[11px] text-zinc-500 mt-1">Start first so all services can discover each other.</p>
           </div>
           <div className="p-3 rounded border border-zinc-100 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-800/40">
             <span className="font-semibold text-zinc-800 dark:text-zinc-200 block">2. Auth Service</span>
@@ -240,7 +253,12 @@ export default function ServiceHealth() {
             <p className="text-[11px] text-zinc-500 mt-1">Register <code>USER-SERVICE</code> and <code>PROJECT-SERVICE</code>.</p>
           </div>
           <div className="p-3 rounded border border-zinc-100 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-800/40">
-            <span className="font-semibold text-zinc-800 dark:text-zinc-200 block">4. API Gateway</span>
+            <span className="font-semibold text-zinc-800 dark:text-zinc-200 block">4. Notification Service</span>
+            <code className="text-[11px] text-zinc-500 block mt-1">Port 8084</code>
+            <p className="text-[11px] text-zinc-500 mt-1">Registers <code>NOTIFICATION-SERVICE</code> for alerts.</p>
+          </div>
+          <div className="p-3 rounded border border-zinc-100 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-800/40">
+            <span className="font-semibold text-zinc-800 dark:text-zinc-200 block">5. API Gateway</span>
             <code className="text-[11px] text-zinc-500 block mt-1">Port 8080</code>
             <p className="text-[11px] text-zinc-500 mt-1">Routes traffic to the active instances.</p>
           </div>

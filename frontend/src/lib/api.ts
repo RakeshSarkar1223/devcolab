@@ -2,12 +2,15 @@ import {
   AuthResponse,
   CurrentUser,
   LoginRequest,
+  Notification,
+  NotificationRequest,
   Project,
   ProjectDetailResponse,
   ProjectMember,
   ProjectMemberRequest,
   ProjectRequest,
   RegisterRequest,
+  UnreadCountResponse,
   UpdateMemberRequest,
   UserProfile,
   UserRequest,
@@ -274,3 +277,54 @@ export const projectApi = {
     });
   },
 };
+
+// ==========================================
+// Notification Service API
+// ==========================================
+export const notificationApi = {
+  async hello(): Promise<string> {
+    return request<string>("/api/notifications/hello");
+  },
+
+  async getAll(): Promise<Notification[]> {
+    return request<Notification[]>("/api/notifications");
+  },
+
+  async getUnread(): Promise<Notification[]> {
+    return request<Notification[]>("/api/notifications/unread");
+  },
+
+  async getUnreadCount(): Promise<UnreadCountResponse> {
+    return request<UnreadCountResponse>("/api/notifications/unread-count");
+  },
+
+  async getById(id: string): Promise<Notification> {
+    return request<Notification>(`/api/notifications/${id}`);
+  },
+
+  async markAsRead(id: string): Promise<Notification> {
+    return request<Notification>(`/api/notifications/${id}/read`, {
+      method: "PATCH",
+    });
+  },
+
+  async markAllAsRead(): Promise<{ message: string; updatedCount: number; userId?: number }> {
+    return request<{ message: string; updatedCount: number; userId?: number }>("/api/notifications/read-all", {
+      method: "PATCH",
+    });
+  },
+
+  async delete(id: string): Promise<void> {
+    await request<void>(`/api/notifications/${id}`, {
+      method: "DELETE",
+    });
+  },
+
+  async create(data: NotificationRequest): Promise<Notification> {
+    return request<Notification>("/api/notifications", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+};
+

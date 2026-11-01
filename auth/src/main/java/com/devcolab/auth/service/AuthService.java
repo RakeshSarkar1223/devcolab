@@ -78,4 +78,12 @@ public class AuthService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + email));
         return UserResponse.fromUser(user);
     }
+
+    public Long getUserId(String token){
+        try {
+            return jwtUtil.extractId(token);
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }

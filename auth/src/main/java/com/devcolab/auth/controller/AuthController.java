@@ -48,4 +48,19 @@ public class AuthController {
         }
         return ResponseEntity.ok(UserResponse.fromUser(user));
     }
+
+    @GetMapping("/user-id")
+    public ResponseEntity<Long> getUserId(@RequestHeader(name = "Authorization", required = false) String token) {
+        if (token == null || token.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        if (token.startsWith("Bearer ")) {
+            token = token.substring(7).trim();
+        }
+        Long userId = authService.getUserId(token);
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(userId);
+    }
 }

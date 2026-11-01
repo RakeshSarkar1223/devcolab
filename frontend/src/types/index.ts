@@ -107,3 +107,23 @@ export interface ProjectDetailResponse {
   updatedAt?: string;
   members: ProjectMember[];
 }
+
+// Notification Service Types
+export interface Notification {
+  id: string;
+  userId: number;
+  message: string;
+  read: boolean;
+  createdAt: string;
+}
+
+export interface UnreadCountResponse {
+  count: number;
+  userId: number;
+}
+
+export interface NotificationRequest {
+  userId: number;
+  message: string;
+}
+

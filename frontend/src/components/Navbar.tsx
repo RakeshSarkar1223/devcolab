@@ -2,6 +2,8 @@
 
 import React from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useNotifications } from "@/context/NotificationContext";
+import NotificationDropdown from "@/components/NotificationDropdown";
 
 interface NavbarProps {
   activeTab: string;
@@ -10,12 +12,18 @@ interface NavbarProps {
 
 export default function Navbar({ activeTab, setActiveTab }: NavbarProps) {
   const { currentUser, isAuthenticated, logout } = useAuth();
+  const { unreadCount } = useNotifications();
 
   const tabs = [
     { id: "health", label: "Health & Services" },
     { id: "auth", label: "Auth (JWT)" },
     { id: "users", label: "User Profiles" },
     { id: "projects", label: "Projects & Teams" },
+    {
+      id: "notifications",
+      label: "Notifications",
+      badge: isAuthenticated && unreadCount > 0 ? unreadCount : null,
+    },
   ];
 
   return (
@@ -44,20 +52,37 @@ export default function Navbar({ activeTab, setActiveTab }: NavbarProps) {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all whitespace-nowrap cursor-pointer ${
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
                   isActive
                     ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-sm"
                     : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800"
                 }`}
               >
-                {tab.label}
+                <span>{tab.label}</span>
+                {tab.badge !== null && tab.badge !== undefined && (
+                  <span
+                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                      isActive
+                        ? "bg-rose-500 text-white"
+                        : "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300"
+                    }`}
+                  >
+                    {tab.badge > 99 ? "99+" : tab.badge}
+                  </span>
+                )}
               </button>
             );
           })}
         </nav>
 
-        {/* User Session Pill */}
+        {/* User Session Pill & Notification Bell */}
         <div className="flex items-center gap-2 text-xs">
+          {isAuthenticated && (
+            <NotificationDropdown
+              onNavigateToNotifications={() => setActiveTab("notifications")}
+            />
+          )}
+
           {isAuthenticated && currentUser ? (
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800 text-[11px]">
@@ -67,7 +92,7 @@ export default function Navbar({ activeTab, setActiveTab }: NavbarProps) {
               </span>
               <button
                 onClick={logout}
-                className="px-2 py-1 text-xs border border-zinc-200 dark:border-zinc-700 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors"
+                className="px-2 py-1 text-xs border border-zinc-200 dark:border-zinc-700 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors cursor-pointer"
                 title="Log out"
               >
                 Logout
@@ -79,7 +104,7 @@ export default function Navbar({ activeTab, setActiveTab }: NavbarProps) {
               <span className="text-[11px]">Not logged in</span>
               <button
                 onClick={() => setActiveTab("auth")}
-                className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-medium cursor-pointer"
               >
                 Sign In →
               </button>
