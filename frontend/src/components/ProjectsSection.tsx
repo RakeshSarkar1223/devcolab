@@ -219,6 +219,7 @@ export default function ProjectsSection({ onNavigateToAuth }: ProjectsSectionPro
         userId: Number(memberUserId),
         role: memberRole,
         status: memberStatus,
+        senderName:currentUser.email
       });
       setSuccess(`Member #${memberUserId} added to project!`);
       setMemberUserId("");

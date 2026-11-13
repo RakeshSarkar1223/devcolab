@@ -90,6 +90,7 @@ export interface ProjectMemberRequest {
   userId: number;
   role: Role;
   status?: MemberStatus;
+  senderName?: string;
 }
 
 export interface UpdateMemberRequest {
@@ -115,6 +116,9 @@ export interface Notification {
   message: string;
   read: boolean;
   createdAt: string;
+  type?: string;
+  projectId?: number;
+  status?: string;
 }
 
 export interface UnreadCountResponse {

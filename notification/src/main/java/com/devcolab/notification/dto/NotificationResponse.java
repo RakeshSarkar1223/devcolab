@@ -25,6 +25,12 @@ public class NotificationResponse {
     @JsonProperty("read")
     private boolean read;
 
+    private String type;
+
+    private Long projectId;
+
+    private String status;
+
     private LocalDateTime createdAt;
 
     public static NotificationResponse fromEntity(Notification notification) {
@@ -36,6 +42,9 @@ public class NotificationResponse {
                 .userId(notification.getUserId())
                 .message(notification.getMessage())
                 .read(notification.isRead())
+                .type(notification.getType())
+                .projectId(notification.getProjectId())
+                .status(notification.getStatus())
                 .createdAt(notification.getCreatedAt())
                 .build();
     }

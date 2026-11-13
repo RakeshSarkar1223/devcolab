@@ -101,4 +101,22 @@ public class NotificationService {
 
         return NotificationResponse.fromEntity(notification);
     }
+
+    @Transactional
+    public NotificationResponse updateStatus(UUID id, String status, Long userId) {
+        Notification notification = notificationRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Notification not found with id: " + id));
+
+        if (!notification.getUserId().equals(userId)) {
+            throw new ForbiddenException("You do not have permission to modify this notification");
+        }
+
+        if (status != null && !status.isBlank()) {
+            notification.setStatus(status.toUpperCase().trim());
+        }
+        notification.setRead(true);
+        Notification updated = notificationRepository.save(notification);
+        log.info("Notification {} status updated to {} for user {}", id, notification.getStatus(), userId);
+        return NotificationResponse.fromEntity(updated);
+    }
 }

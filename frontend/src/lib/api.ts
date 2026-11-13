@@ -276,6 +276,18 @@ export const projectApi = {
       method: "DELETE",
     });
   },
+
+  async acceptInvitation(projectId: number | string, userId: number | string): Promise<ProjectMember> {
+    return request<ProjectMember>(`/api/projects/${projectId}/members/${userId}/accept`, {
+      method: "POST",
+    });
+  },
+
+  async rejectInvitation(projectId: number | string, userId: number | string): Promise<void> {
+    await request<void>(`/api/projects/${projectId}/members/${userId}/reject`, {
+      method: "POST",
+    });
+  },
 };
 
 // ==========================================
@@ -311,6 +323,13 @@ export const notificationApi = {
   async markAllAsRead(): Promise<{ message: string; updatedCount: number; userId?: number }> {
     return request<{ message: string; updatedCount: number; userId?: number }>("/api/notifications/read-all", {
       method: "PATCH",
+    });
+  },
+
+  async updateStatus(id: string, status: string): Promise<Notification> {
+    return request<Notification>(`/api/notifications/${id}/status`, {
+      method: "PUT",
+      body: JSON.stringify({ status }),
     });
   },
 

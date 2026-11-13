@@ -4,7 +4,9 @@ import com.devcolab.projectservice.dto.ProjectMemberRequest;
 import com.devcolab.projectservice.dto.ProjectRequest;
 import com.devcolab.projectservice.dto.ProjectResponse;
 import com.devcolab.projectservice.dto.UpdateMemberRequest;
+import com.devcolab.projectservice.event.ProjectInvitationEvent;
 import com.devcolab.projectservice.exception.ResourceNotFoundException;
+import com.devcolab.projectservice.kafka.ProjectEventPublisher;
 import com.devcolab.projectservice.model.MemberStatus;
 import com.devcolab.projectservice.model.Project;
 import com.devcolab.projectservice.model.ProjectMember;
@@ -25,6 +27,7 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
 
+    private final ProjectEventPublisher publisher;
     // ==========================================
     // Project CRUD
     // ==========================================
@@ -109,7 +112,7 @@ public class ProjectService {
     @Transactional
     public ProjectMember addMember(Long projectId, ProjectMemberRequest request) {
         // Ensure project exists
-        getProjectById(projectId);
+        Project project = getProjectById(projectId);
 
         if (projectMemberRepository.existsByProjectIdAndUserId(projectId, request.getUserId())) {
             throw new IllegalArgumentException("User with id " + request.getUserId() + " is already a member of project id " + projectId);
@@ -121,6 +124,16 @@ public class ProjectService {
                 .role(request.getRole())
                 .status(request.getStatus() != null ? request.getStatus() : MemberStatus.ACTIVE)
                 .build();
+
+        ProjectInvitationEvent event = ProjectInvitationEvent.builder()
+                .receiverId(request.getUserId())
+                .projectName(project.getName())
+                .role(request.getRole())
+                .senderName(request.getSenderName())
+                .projectId(projectId)
+                .build();
+
+        publisher.publish(event);
 
         return projectMemberRepository.save(member);
     }
@@ -160,6 +173,25 @@ public class ProjectService {
     @Transactional
     public void removeMember(Long projectId, Long memberId) {
         ProjectMember member = getProjectMember(projectId, memberId);
+        projectMemberRepository.delete(member);
+    }
+
+    @Transactional
+    public ProjectMember acceptInvitation(Long projectId, Long userId) {
+        getProjectById(projectId);
+        ProjectMember member = projectMemberRepository.findByProjectIdAndUserId(projectId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Invitation not found for project " + projectId + " and user " + userId));
+
+        member.setStatus(MemberStatus.ACTIVE);
+        return projectMemberRepository.save(member);
+    }
+
+    @Transactional
+    public void rejectInvitation(Long projectId, Long userId) {
+        getProjectById(projectId);
+        ProjectMember member = projectMemberRepository.findByProjectIdAndUserId(projectId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Invitation not found for project " + projectId + " and user " + userId));
+
         projectMemberRepository.delete(member);
     }
 }

@@ -9,7 +9,7 @@ import React, {
   ReactNode,
 } from "react";
 import { Notification, NotificationRequest } from "@/types";
-import { notificationApi } from "@/lib/api";
+import { notificationApi, projectApi } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 
 interface NotificationContextType {
@@ -22,6 +22,8 @@ interface NotificationContextType {
   markAllAsRead: () => Promise<void>;
   deleteNotification: (id: string) => Promise<void>;
   createNotification: (data: NotificationRequest) => Promise<Notification>;
+  acceptInvitation: (notificationId: string, projectId: number) => Promise<void>;
+  rejectInvitation: (notificationId: string, projectId: number) => Promise<void>;
   clearError: () => void;
 }
 
@@ -171,6 +173,56 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Accept project invitation
+  const acceptInvitation = async (notificationId: string, projectId: number) => {
+    if (!currentUser) throw new Error("You must be logged in to accept an invitation");
+    try {
+      await projectApi.acceptInvitation(projectId, currentUser.id);
+
+      try {
+        await notificationApi.updateStatus(notificationId, "ACCEPTED");
+      } catch {
+        await notificationApi.markAsRead(notificationId).catch(() => {});
+      }
+
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.id === notificationId ? { ...n, status: "ACCEPTED", read: true } : n
+        )
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to accept invitation";
+      setError(msg);
+      throw err;
+    }
+  };
+
+  // Reject project invitation
+  const rejectInvitation = async (notificationId: string, projectId: number) => {
+    if (!currentUser) throw new Error("You must be logged in to reject an invitation");
+    try {
+      await projectApi.rejectInvitation(projectId, currentUser.id);
+
+      try {
+        await notificationApi.updateStatus(notificationId, "REJECTED");
+      } catch {
+        await notificationApi.markAsRead(notificationId).catch(() => {});
+      }
+
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.id === notificationId ? { ...n, status: "REJECTED", read: true } : n
+        )
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to reject invitation";
+      setError(msg);
+      throw err;
+    }
+  };
+
   const value: NotificationContextType = {
     notifications,
     unreadCount,
@@ -181,6 +233,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     markAllAsRead,
     deleteNotification,
     createNotification,
+    acceptInvitation,
+    rejectInvitation,
     clearError,
   };
 

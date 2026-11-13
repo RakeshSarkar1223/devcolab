@@ -47,6 +47,8 @@ export default function NotificationDropdown({
     markAllAsRead,
     deleteNotification,
     refreshNotifications,
+    acceptInvitation,
+    rejectInvitation,
   } = useNotifications();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -131,6 +133,30 @@ export default function NotificationDropdown({
       // error handled in context
     } finally {
       setMarkingAll(false);
+    }
+  };
+
+  const handleAccept = async (id: string, projectId: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setProcessingId(id);
+    try {
+      await acceptInvitation(id, projectId);
+    } catch {
+      // error handled in context
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleReject = async (id: string, projectId: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setProcessingId(id);
+    try {
+      await rejectInvitation(id, projectId);
+    } catch {
+      // error handled in context
+    } finally {
+      setProcessingId(null);
     }
   };
 
@@ -360,6 +386,43 @@ export default function NotificationDropdown({
                       >
                         {n.message}
                       </p>
+
+                      {/* Project Invitation Actions / Status */}
+                      {(n.type === "PROJECT_INVITATION" || n.projectId) && (
+                        <div className="mt-2 pt-1 border-t border-zinc-100 dark:border-zinc-800">
+                          {n.status === "ACCEPTED" ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded">
+                              ✓ Accepted
+                            </span>
+                          ) : n.status === "REJECTED" ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded">
+                              ✕ Declined
+                            </span>
+                          ) : (
+                            n.projectId && (
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleAccept(n.id, n.projectId!, e)}
+                                  disabled={isItemProcessing}
+                                  className="px-2 py-0.5 text-[10px] font-semibold rounded bg-emerald-600 hover:bg-emerald-700 text-white transition-colors cursor-pointer flex items-center gap-1 disabled:opacity-50"
+                                >
+                                  ✓ Accept
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleReject(n.id, n.projectId!, e)}
+                                  disabled={isItemProcessing}
+                                  className="px-2 py-0.5 text-[10px] font-medium rounded border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors cursor-pointer flex items-center gap-1 disabled:opacity-50"
+                                >
+                                  ✕ Decline
+                                </button>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      )}
+
                       <div className="mt-1 flex items-center gap-2 text-[10px] text-zinc-400">
                         <span>{formatTimeAgo(n.createdAt)}</span>
                         {!n.read && (

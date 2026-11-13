@@ -37,6 +37,16 @@ public class Notification {
     @Builder.Default
     private boolean read = false;
 
+    @Column(name = "type")
+    private String type;
+
+    @Column(name = "project_id")
+    @JsonProperty("projectId")
+    private Long projectId;
+
+    @Column(name = "status")
+    private String status;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     @JsonProperty("createdAt")

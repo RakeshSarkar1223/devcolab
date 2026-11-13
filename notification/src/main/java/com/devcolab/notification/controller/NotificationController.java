@@ -143,4 +143,18 @@ public class NotificationController {
         Long userId = getLoggedInUserId(token);
         return ResponseEntity.ok(notificationService.getNotificationById(id, userId));
     }
+
+    /**
+     * PUT /api/notifications/{id}/status
+     * Update notification status (e.g. ACCEPTED or REJECTED) for the logged-in user.
+     */
+    @PutMapping("/{id}/status")
+    public ResponseEntity<NotificationResponse> updateStatus(
+            @PathVariable UUID id,
+            @RequestBody Map<String, String> body,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String token) {
+        Long userId = getLoggedInUserId(token);
+        String status = body != null ? body.get("status") : null;
+        return ResponseEntity.ok(notificationService.updateStatus(id, status, userId));
+    }
 }

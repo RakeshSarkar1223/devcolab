@@ -112,4 +112,19 @@ public class ProjectController {
         projectService.removeMember(projectId, memberId);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping({ "/{projectId}/members/{userId}/accept", "/{projectId}/invitations/{userId}/accept" })
+    public ResponseEntity<ProjectMember> acceptInvitation(
+            @PathVariable Long projectId,
+            @PathVariable Long userId) {
+        return ResponseEntity.ok(projectService.acceptInvitation(projectId, userId));
+    }
+
+    @PostMapping({ "/{projectId}/members/{userId}/reject", "/{projectId}/invitations/{userId}/reject" })
+    public ResponseEntity<Void> rejectInvitation(
+            @PathVariable Long projectId,
+            @PathVariable Long userId) {
+        projectService.rejectInvitation(projectId, userId);
+        return ResponseEntity.noContent().build();
+    }
 }

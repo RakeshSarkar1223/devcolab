@@ -19,4 +19,6 @@ public class ProjectMemberRequest {
     private Role role;
 
     private MemberStatus status;
+
+    private String senderName;
 }

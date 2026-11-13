@@ -30,6 +30,8 @@ export default function NotificationsSection({
     markAllAsRead,
     deleteNotification,
     createNotification,
+    acceptInvitation,
+    rejectInvitation,
     clearError,
   } = useNotifications();
 
@@ -163,6 +165,35 @@ export default function NotificationsSection({
       // error set in context
     } finally {
       setMarkingAll(false);
+    }
+  };
+
+  const handleAccept = async (id: string, projectId: number) => {
+    setProcessingId(id);
+    clearError();
+    try {
+      await acceptInvitation(id, projectId);
+      setActionSuccess("Project invitation accepted! You are now a collaborator.");
+      setTimeout(() => setActionSuccess(null), 4000);
+    } catch {
+      // error set in context
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleReject = async (id: string, projectId: number) => {
+    if (!confirm("Are you sure you want to decline this project invitation?")) return;
+    setProcessingId(id);
+    clearError();
+    try {
+      await rejectInvitation(id, projectId);
+      setActionSuccess("Project invitation declined.");
+      setTimeout(() => setActionSuccess(null), 4000);
+    } catch {
+      // error set in context
+    } finally {
+      setProcessingId(null);
     }
   };
 
@@ -854,6 +885,12 @@ export default function NotificationsSection({
                           {!n.read ? "NEW / UNREAD" : "READ"}
                         </span>
 
+                        {(n.type === "PROJECT_INVITATION" || n.projectId) && (
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 dark:bg-indigo-950/70 dark:text-indigo-300">
+                            PROJECT INVITATION
+                          </span>
+                        )}
+
                         <span className="text-[10px] text-zinc-500 font-mono">
                           User #{n.userId}
                         </span>
@@ -872,6 +909,54 @@ export default function NotificationsSection({
                       >
                         {n.message}
                       </p>
+
+                      {/* Project Invitation Actions / Status */}
+                      {(n.type === "PROJECT_INVITATION" || n.projectId) && (
+                        <div className="mt-3">
+                          {n.status === "ACCEPTED" ? (
+                            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-md border border-emerald-200 dark:border-emerald-800">
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                              Invitation Accepted
+                            </span>
+                          ) : n.status === "REJECTED" ? (
+                            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1 rounded-md border border-rose-200 dark:border-rose-800">
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                              Invitation Declined
+                            </span>
+                          ) : (
+                            n.projectId && (
+                              <div className="flex flex-wrap items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleAccept(n.id, n.projectId!)}
+                                  disabled={isItemProcessing}
+                                  className="px-3 py-1.5 text-xs font-semibold rounded bg-emerald-600 hover:bg-emerald-700 text-white transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50 shadow-xs"
+                                >
+                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                  Accept Invitation
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleReject(n.id, n.projectId!)}
+                                  disabled={isItemProcessing}
+                                  className="px-3 py-1.5 text-xs font-medium rounded border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                                >
+                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                  Reject Invitation
+                                </button>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      )}
 
                       <div className="mt-2 text-[10px] text-zinc-400 font-mono truncate max-w-sm">
                         ID: {n.id}
