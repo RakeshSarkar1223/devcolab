@@ -175,7 +175,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   // Accept project invitation
   const acceptInvitation = async (notificationId: string, projectId: number) => {
-    if (!currentUser) throw new Error("You must be logged in to accept an invitation");
+    if (!currentUser?.id) throw new Error("You must be logged in to accept an invitation");
     try {
       await projectApi.acceptInvitation(projectId, currentUser.id);
 
@@ -200,7 +200,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   // Reject project invitation
   const rejectInvitation = async (notificationId: string, projectId: number) => {
-    if (!currentUser) throw new Error("You must be logged in to reject an invitation");
+    if (!currentUser?.id) throw new Error("You must be logged in to reject an invitation");
     try {
       await projectApi.rejectInvitation(projectId, currentUser.id);
 

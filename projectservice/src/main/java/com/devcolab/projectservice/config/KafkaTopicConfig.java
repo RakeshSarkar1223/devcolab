@@ -14,4 +14,14 @@ public class KafkaTopicConfig {
                 .replicas(1)
                 .build();
     }
+
+    @Bean
+    public NewTopic invitationResponseTopic() {
+        return TopicBuilder.name("invitation-response")
+                .partitions(3)
+                .replicas(1)
+                .build();
+    }
+
+
 }

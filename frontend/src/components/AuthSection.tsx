@@ -4,7 +4,12 @@ import React, { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { CurrentUser } from "@/types";
 
-export default function AuthSection() {
+interface AuthSectionProps {
+  onSuccess?: () => void;
+  onCancel?: () => void;
+}
+
+export default function AuthSection({ onSuccess, onCancel }: AuthSectionProps = {}) {
   const { currentUser, isAuthenticated, token, login, register, logout, refreshUser } = useAuth();
 
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -29,9 +34,15 @@ export default function AuthSection() {
       if (mode === "register") {
         const res = await register({ email, password });
         setSuccess(`Registration successful! User ID: ${res.id}`);
+        if (onSuccess) {
+          setTimeout(onSuccess, 600);
+        }
       } else {
         const res = await login({ email, password });
         setSuccess(`Login successful! Welcome back, ${res.email}`);
+        if (onSuccess) {
+          setTimeout(onSuccess, 600);
+        }
       }
       setPassword("");
     } catch (err: unknown) {
@@ -58,9 +69,19 @@ export default function AuthSection() {
     <div className="space-y-6">
       {/* Overview */}
       <div className="p-5 rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 shadow-xs">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-          Authentication Service
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+            Sign In / Register
+          </h2>
+          {onCancel && (
+            <button
+              onClick={onCancel}
+              className="text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 flex items-center gap-1 cursor-pointer"
+            >
+              &larr; Back to Projects
+            </button>
+          )}
+        </div>
         <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
           Issue JWT tokens and authenticate through{" "}
           <code className="text-xs font-mono bg-zinc-100 dark:bg-zinc-800 px-1 py-0.5 rounded">

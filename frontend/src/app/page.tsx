@@ -19,7 +19,12 @@ export default function Home() {
       {/* Main Content Area */}
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8">
         {activeTab === "health" && <ServiceHealth />}
-        {activeTab === "auth" && <AuthSection />}
+        {activeTab === "auth" && (
+          <AuthSection
+            onSuccess={() => setActiveTab("projects")}
+            onCancel={() => setActiveTab("projects")}
+          />
+        )}
         {activeTab === "users" && <UsersSection />}
         {activeTab === "projects" && (
           <ProjectsSection onNavigateToAuth={() => setActiveTab("auth")} />

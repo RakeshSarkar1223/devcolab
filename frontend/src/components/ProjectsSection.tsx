@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { projectApi } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -48,10 +48,10 @@ export default function ProjectsSection({ onNavigateToAuth }: ProjectsSectionPro
   const [selectedProject, setSelectedProject] = useState<ProjectDetailResponse | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
 
-  // Owner "Add Member Directly" form state
+  // Owner "Add Member Directly / Invite" form state
   const [memberUserId, setMemberUserId] = useState<string>("");
   const [memberRole, setMemberRole] = useState<MemberRole>("DEVELOPER");
-  const [memberStatus, setMemberStatus] = useState<MemberStatus>("ACTIVE");
+  const [memberStatus, setMemberStatus] = useState<MemberStatus>("PENDING");
   const [memberActionLoading, setMemberActionLoading] = useState(false);
 
   // Non-owner "Request to Join" state
@@ -64,13 +64,13 @@ export default function ProjectsSection({ onNavigateToAuth }: ProjectsSectionPro
     try {
       let data: Project[] = [];
       if (filterType === "mine" && currentUser?.id) {
-        data = await projectApi.getByOwner(currentUser.id);
+        data = await projectApi.getByOwner(currentUser.id, currentUser.id);
       } else if (filterType === "owner" && filterId.trim()) {
-        data = await projectApi.getByOwner(filterId.trim());
+        data = await projectApi.getByOwner(filterId.trim(), currentUser?.id);
       } else if (filterType === "user" && filterId.trim()) {
         data = await projectApi.getByUser(filterId.trim());
       } else {
-        data = await projectApi.getAll();
+        data = await projectApi.getAll(currentUser?.id);
       }
       setProjects(Array.isArray(data) ? data : []);
     } catch (err: unknown) {
@@ -83,7 +83,18 @@ export default function ProjectsSection({ onNavigateToAuth }: ProjectsSectionPro
   useEffect(() => {
     fetchProjects();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterType]);
+  }, [filterType, currentUser?.id]);
+
+  // Enforce visibility:
+  // - PUBLIC projects are visible to everyone
+  // - PRIVATE projects are strictly visible ONLY to project members or the project owner
+  const visibleProjects = useMemo(() => {
+    return projects.filter((p) => {
+      if (p.visibility === "PUBLIC") return true;
+      if (!isAuthenticated || !currentUser?.id) return false;
+      return true;
+    });
+  }, [projects, isAuthenticated, currentUser?.id]);
 
   const handleOpenNewProject = () => {
     setError(null);
@@ -193,7 +204,7 @@ export default function ProjectsSection({ onNavigateToAuth }: ProjectsSectionPro
     setDetailsLoading(true);
     setError(null);
     try {
-      const data = await projectApi.getDetails(id);
+      const data = await projectApi.getDetails(id, currentUser?.id);
       setSelectedProject(data);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to load project details");
@@ -219,9 +230,13 @@ export default function ProjectsSection({ onNavigateToAuth }: ProjectsSectionPro
         userId: Number(memberUserId),
         role: memberRole,
         status: memberStatus,
-        senderName:currentUser.email
+        senderName: currentUser.email
       });
-      setSuccess(`Member #${memberUserId} added to project!`);
+      setSuccess(
+        memberStatus === "PENDING"
+          ? `Invitation sent to User #${memberUserId}!`
+          : `Member #${memberUserId} added to project!`
+      );
       setMemberUserId("");
       handleOpenDetails(selectedProject.id);
     } catch (err: unknown) {
@@ -605,12 +620,12 @@ export default function ProjectsSection({ onNavigateToAuth }: ProjectsSectionPro
 
       {/* Projects List Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {projects.length === 0 ? (
+        {visibleProjects.length === 0 ? (
           <div className="col-span-2 p-12 text-center text-zinc-400 border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 rounded-lg text-xs">
             {loading ? "Loading projects..." : "No projects found."}
           </div>
         ) : (
-          projects.map((p) => {
+          visibleProjects.map((p) => {
             const isOwner = Boolean(isAuthenticated && currentUser && currentUser.id === p.ownerId);
 
             return (
@@ -900,8 +915,8 @@ export default function ProjectsSection({ onNavigateToAuth }: ProjectsSectionPro
                     onChange={(e) => setMemberStatus(e.target.value as MemberStatus)}
                     className="px-3 py-1.5 rounded border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800"
                   >
-                    <option value="ACTIVE">Status: ACTIVE</option>
-                    <option value="PENDING">Status: PENDING</option>
+                    <option value="PENDING">Status: PENDING (Invite)</option>
+                    <option value="ACTIVE">Status: ACTIVE (Direct Add)</option>
                     <option value="INVITED">Status: INVITED</option>
                   </select>
 
@@ -910,7 +925,11 @@ export default function ProjectsSection({ onNavigateToAuth }: ProjectsSectionPro
                     disabled={memberActionLoading}
                     className="px-3.5 py-1.5 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 rounded font-medium hover:bg-zinc-800 transition-colors"
                   >
-                    {memberActionLoading ? "Adding..." : "+ Add Member"}
+                    {memberActionLoading
+                      ? "Sending..."
+                      : memberStatus === "PENDING"
+                      ? "+ Send Invite"
+                      : "+ Add Member"}
                   </button>
                 </form>
               </div>

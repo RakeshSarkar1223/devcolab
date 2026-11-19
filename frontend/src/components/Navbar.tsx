@@ -4,6 +4,7 @@ import React from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/context/NotificationContext";
 import NotificationDropdown from "@/components/NotificationDropdown";
+import ProfileSectionTopRight from "@/components/ProfileSectionTopRight";
 
 interface NavbarProps {
   activeTab: string;
@@ -15,15 +16,16 @@ export default function Navbar({ activeTab, setActiveTab }: NavbarProps) {
   const { unreadCount } = useNotifications();
 
   const tabs = [
-    { id: "health", label: "Health & Services" },
-    { id: "auth", label: "Auth (JWT)" },
-    { id: "users", label: "User Profiles" },
     { id: "projects", label: "Projects & Teams" },
-    {
-      id: "notifications",
-      label: "Notifications",
-      badge: isAuthenticated && unreadCount > 0 ? unreadCount : null,
-    },
+    ...(isAuthenticated
+      ? [
+          {
+            id: "notifications",
+            label: "Notifications",
+            badge: unreadCount > 0 ? unreadCount : null,
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -75,41 +77,16 @@ export default function Navbar({ activeTab, setActiveTab }: NavbarProps) {
           })}
         </nav>
 
-        {/* User Session Pill & Notification Bell */}
-        <div className="flex items-center gap-2 text-xs">
+        {/* Right Section: Notifications & Profile with Percent Wheel */}
+        <div className="flex items-center gap-2.5 text-xs">
           {isAuthenticated && (
             <NotificationDropdown
               onNavigateToNotifications={() => setActiveTab("notifications")}
             />
           )}
 
-          {isAuthenticated && currentUser ? (
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800 text-[11px]">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="truncate max-w-[140px] font-mono">{currentUser.email}</span>
-                <span className="text-[10px] opacity-70">#{currentUser.id}</span>
-              </span>
-              <button
-                onClick={logout}
-                className="px-2 py-1 text-xs border border-zinc-200 dark:border-zinc-700 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors cursor-pointer"
-                title="Log out"
-              >
-                Logout
-              </button>
-            </div>
-          ) : (
-            <div className="text-zinc-500 dark:text-zinc-400 text-xs flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-zinc-300 dark:bg-zinc-700" />
-              <span className="text-[11px]">Not logged in</span>
-              <button
-                onClick={() => setActiveTab("auth")}
-                className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-medium cursor-pointer"
-              >
-                Sign In →
-              </button>
-            </div>
-          )}
+          {/* Profile Section with Circular Percent Wheel */}
+          <ProfileSectionTopRight onNavigateToTab={setActiveTab} />
         </div>
       </div>
     </header>

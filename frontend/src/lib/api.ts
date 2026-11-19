@@ -62,6 +62,11 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     headers["Authorization"] = `Bearer ${token}`;
   }
 
+  const user = getStoredUser();
+  if (user?.id && !headers["X-User-Id"]) {
+    headers["X-User-Id"] = String(user.id);
+  }
+
   let response: Response;
   try {
     response = await fetch(endpoint, {
@@ -204,20 +209,24 @@ export const projectApi = {
     return request<string>("/api/projects/hello");
   },
 
-  async getAll(): Promise<Project[]> {
-    return request<Project[]>("/api/projects");
+  async getAll(userId?: number | string): Promise<Project[]> {
+    const q = userId ? `?userId=${userId}` : "";
+    return request<Project[]>(`/api/projects${q}`);
   },
 
-  async getById(id: number | string): Promise<Project> {
-    return request<Project>(`/api/projects/${id}`);
+  async getById(id: number | string, userId?: number | string): Promise<Project> {
+    const q = userId ? `?userId=${userId}` : "";
+    return request<Project>(`/api/projects/${id}${q}`);
   },
 
-  async getDetails(id: number | string): Promise<ProjectDetailResponse> {
-    return request<ProjectDetailResponse>(`/api/projects/${id}/details`);
+  async getDetails(id: number | string, userId?: number | string): Promise<ProjectDetailResponse> {
+    const q = userId ? `?userId=${userId}` : "";
+    return request<ProjectDetailResponse>(`/api/projects/${id}/details${q}`);
   },
 
-  async getByOwner(ownerId: number | string): Promise<Project[]> {
-    return request<Project[]>(`/api/projects/owner/${ownerId}`);
+  async getByOwner(ownerId: number | string, userId?: number | string): Promise<Project[]> {
+    const q = userId ? `?userId=${userId}` : "";
+    return request<Project[]>(`/api/projects/owner/${ownerId}${q}`);
   },
 
   async getByUser(userId: number | string): Promise<Project[]> {
@@ -278,15 +287,21 @@ export const projectApi = {
   },
 
   async acceptInvitation(projectId: number | string, userId: number | string): Promise<ProjectMember> {
-    return request<ProjectMember>(`/api/projects/${projectId}/members/${userId}/accept`, {
-      method: "POST",
-    });
+    return request<ProjectMember>(
+      `/api/projects/${projectId}/members/${userId}/accept`,
+      {
+        method: "POST",
+      }
+    );
   },
 
   async rejectInvitation(projectId: number | string, userId: number | string): Promise<void> {
-    await request<void>(`/api/projects/${projectId}/members/${userId}/reject`, {
-      method: "POST",
-    });
+    await request<void>(
+      `/api/projects/${projectId}/members/${userId}/reject`,
+      {
+        method: "POST",
+      }
+    );
   },
 };
 

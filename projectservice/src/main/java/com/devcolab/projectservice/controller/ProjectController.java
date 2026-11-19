@@ -38,23 +38,38 @@ public class ProjectController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Project>> getAllProjects() {
-        return ResponseEntity.ok(projectService.getAllProjects());
+    public ResponseEntity<List<Project>> getAllProjects(
+            @RequestParam(required = false) Long userId,
+            @RequestHeader(value = "X-User-Id", required = false) Long headerUserId) {
+        Long effectiveUserId = userId != null ? userId : headerUserId;
+        return ResponseEntity.ok(projectService.getAllProjects(effectiveUserId));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Project> getProjectById(@PathVariable Long id) {
-        return ResponseEntity.ok(projectService.getProjectById(id));
+    public ResponseEntity<Project> getProjectById(
+            @PathVariable Long id,
+            @RequestParam(required = false) Long userId,
+            @RequestHeader(value = "X-User-Id", required = false) Long headerUserId) {
+        Long effectiveUserId = userId != null ? userId : headerUserId;
+        return ResponseEntity.ok(projectService.getProjectById(id, effectiveUserId));
     }
 
     @GetMapping("/{id}/details")
-    public ResponseEntity<ProjectResponse> getProjectWithMembers(@PathVariable Long id) {
-        return ResponseEntity.ok(projectService.getProjectWithMembers(id));
+    public ResponseEntity<ProjectResponse> getProjectWithMembers(
+            @PathVariable Long id,
+            @RequestParam(required = false) Long userId,
+            @RequestHeader(value = "X-User-Id", required = false) Long headerUserId) {
+        Long effectiveUserId = userId != null ? userId : headerUserId;
+        return ResponseEntity.ok(projectService.getProjectWithMembers(id, effectiveUserId));
     }
 
     @GetMapping("/owner/{ownerId}")
-    public ResponseEntity<List<Project>> getProjectsByOwnerId(@PathVariable Long ownerId) {
-        return ResponseEntity.ok(projectService.getProjectsByOwnerId(ownerId));
+    public ResponseEntity<List<Project>> getProjectsByOwnerId(
+            @PathVariable Long ownerId,
+            @RequestParam(required = false) Long userId,
+            @RequestHeader(value = "X-User-Id", required = false) Long headerUserId) {
+        Long effectiveUserId = userId != null ? userId : headerUserId;
+        return ResponseEntity.ok(projectService.getProjectsByOwnerId(ownerId, effectiveUserId));
     }
 
     @GetMapping("/user/{userId}")

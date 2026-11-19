@@ -59,6 +59,37 @@ export interface UserRequest {
   avatar_link?: string;
 }
 
+export type ProfileFieldKey =
+  | "name"
+  | "email"
+  | "bio"
+  | "skills"
+  | "college"
+  | "department"
+  | "social_links"
+  | "avatar_link";
+
+export interface ProfileFieldItem {
+  key: ProfileFieldKey;
+  label: string;
+  description: string;
+  category: "Identity" | "About" | "Skills & Education" | "Online Presence";
+  isFilled: boolean;
+  value?: string;
+  placeholder: string;
+  requiredForCollab?: boolean;
+}
+
+export interface ProfileCompletionStats {
+  percentage: number;
+  filledCount: number;
+  totalCount: number;
+  missingCount: number;
+  levelTitle: string;
+  levelColor: string;
+  fields: ProfileFieldItem[];
+}
+
 // Project Service Types
 export interface Project {
   id: number;

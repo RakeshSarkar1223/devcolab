@@ -4,7 +4,9 @@ import com.devcolab.projectservice.dto.ProjectMemberRequest;
 import com.devcolab.projectservice.dto.ProjectRequest;
 import com.devcolab.projectservice.dto.ProjectResponse;
 import com.devcolab.projectservice.dto.UpdateMemberRequest;
+import com.devcolab.projectservice.event.InvitationResponseEvent;
 import com.devcolab.projectservice.event.ProjectInvitationEvent;
+import com.devcolab.projectservice.exception.ForbiddenException;
 import com.devcolab.projectservice.exception.ResourceNotFoundException;
 import com.devcolab.projectservice.kafka.ProjectEventPublisher;
 import com.devcolab.projectservice.model.MemberStatus;
@@ -56,8 +58,36 @@ public class ProjectService {
         return savedProject;
     }
 
+    public boolean isUserProjectMemberOrOwner(Project project, Long userId) {
+        if (userId == null) {
+            return false;
+        }
+        if (project.getOwnerId() != null && project.getOwnerId().equals(userId)) {
+            return true;
+        }
+        return projectMemberRepository.existsByProjectIdAndUserId(project.getId(), userId);
+    }
+
+    public List<Project> getAllProjects(Long userId) {
+        if (userId == null) {
+            return projectRepository.findByVisibility(Visibility.PUBLIC);
+        }
+
+        List<Long> memberProjectIds = projectMemberRepository.findByUserId(userId)
+                .stream()
+                .map(ProjectMember::getProjectId)
+                .distinct()
+                .toList();
+
+        return projectRepository.findAll().stream()
+                .filter(p -> p.getVisibility() == Visibility.PUBLIC
+                        || (p.getOwnerId() != null && p.getOwnerId().equals(userId))
+                        || memberProjectIds.contains(p.getId()))
+                .toList();
+    }
+
     public List<Project> getAllProjects() {
-        return projectRepository.findAll();
+        return getAllProjects(null);
     }
 
     public Project getProjectById(Long id) {
@@ -65,14 +95,36 @@ public class ProjectService {
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
     }
 
-    public ProjectResponse getProjectWithMembers(Long id) {
+    public Project getProjectById(Long id, Long userId) {
         Project project = getProjectById(id);
+        if (project.getVisibility() == Visibility.PRIVATE && !isUserProjectMemberOrOwner(project, userId)) {
+            throw new ForbiddenException("Access denied: Project #" + id + " is private and only visible to project members");
+        }
+        return project;
+    }
+
+    public ProjectResponse getProjectWithMembers(Long id, Long userId) {
+        Project project = getProjectById(id, userId);
         List<ProjectMember> members = projectMemberRepository.findByProjectId(id);
         return ProjectResponse.fromProject(project, members);
     }
 
+    public ProjectResponse getProjectWithMembers(Long id) {
+        return getProjectWithMembers(id, null);
+    }
+
+    public List<Project> getProjectsByOwnerId(Long ownerId, Long userId) {
+        List<Project> ownerProjects = projectRepository.findByOwnerId(ownerId);
+        if (userId != null && userId.equals(ownerId)) {
+            return ownerProjects;
+        }
+        return ownerProjects.stream()
+                .filter(p -> p.getVisibility() == Visibility.PUBLIC || isUserProjectMemberOrOwner(p, userId))
+                .toList();
+    }
+
     public List<Project> getProjectsByOwnerId(Long ownerId) {
-        return projectRepository.findByOwnerId(ownerId);
+        return getProjectsByOwnerId(ownerId, null);
     }
 
     public List<Project> getProjectsByUserId(Long userId) {
@@ -118,12 +170,16 @@ public class ProjectService {
             throw new IllegalArgumentException("User with id " + request.getUserId() + " is already a member of project id " + projectId);
         }
 
+        MemberStatus initialStatus = request.getStatus() != null ? request.getStatus() : MemberStatus.PENDING;
+
         ProjectMember member = ProjectMember.builder()
                 .projectId(projectId)
                 .userId(request.getUserId())
                 .role(request.getRole())
-                .status(request.getStatus() != null ? request.getStatus() : MemberStatus.ACTIVE)
+                .status(initialStatus)
                 .build();
+
+        ProjectMember savedMember = projectMemberRepository.save(member);
 
         ProjectInvitationEvent event = ProjectInvitationEvent.builder()
                 .receiverId(request.getUserId())
@@ -135,7 +191,7 @@ public class ProjectService {
 
         publisher.publish(event);
 
-        return projectMemberRepository.save(member);
+        return savedMember;
     }
 
     public List<ProjectMember> getProjectMembers(Long projectId) {
@@ -178,20 +234,45 @@ public class ProjectService {
 
     @Transactional
     public ProjectMember acceptInvitation(Long projectId, Long userId) {
-        getProjectById(projectId);
+        Project project = getProjectById(projectId);
         ProjectMember member = projectMemberRepository.findByProjectIdAndUserId(projectId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Invitation not found for project " + projectId + " and user " + userId));
 
         member.setStatus(MemberStatus.ACTIVE);
-        return projectMemberRepository.save(member);
+        ProjectMember savedMember = projectMemberRepository.save(member);
+
+        InvitationResponseEvent event = InvitationResponseEvent.builder()
+                .receiverId(project.getOwnerId())
+                .responderId(userId)
+                .projectId(projectId)
+                .projectName(project.getName())
+                .role(savedMember.getRole())
+                .accepted(true)
+                .build();
+
+        publisher.sendResponse(event);
+
+        return savedMember;
     }
 
     @Transactional
     public void rejectInvitation(Long projectId, Long userId) {
-        getProjectById(projectId);
+        Project project = getProjectById(projectId);
         ProjectMember member = projectMemberRepository.findByProjectIdAndUserId(projectId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Invitation not found for project " + projectId + " and user " + userId));
 
+        Role role = member.getRole();
         projectMemberRepository.delete(member);
+
+        InvitationResponseEvent event = InvitationResponseEvent.builder()
+                .receiverId(project.getOwnerId())
+                .responderId(userId)
+                .projectId(projectId)
+                .projectName(project.getName())
+                .role(role)
+                .accepted(false)
+                .build();
+
+        publisher.sendResponse(event);
     }
 }
