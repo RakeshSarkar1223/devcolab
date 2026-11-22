@@ -2,7 +2,6 @@
 
 import React from "react";
 import { useAuth } from "@/context/AuthContext";
-import { useNotifications } from "@/context/NotificationContext";
 import NotificationDropdown from "@/components/NotificationDropdown";
 import ProfileSectionTopRight from "@/components/ProfileSectionTopRight";
 
@@ -11,21 +10,17 @@ interface NavbarProps {
   setActiveTab: (tab: string) => void;
 }
 
-export default function Navbar({ activeTab, setActiveTab }: NavbarProps) {
-  const { currentUser, isAuthenticated, logout } = useAuth();
-  const { unreadCount } = useNotifications();
+interface TabItem {
+  id: string;
+  label: string;
+  badge?: number | null;
+}
 
-  const tabs = [
+export default function Navbar({ activeTab, setActiveTab }: NavbarProps) {
+  const { isAuthenticated } = useAuth();
+
+  const tabs: TabItem[] = [
     { id: "projects", label: "Projects & Teams" },
-    ...(isAuthenticated
-      ? [
-          {
-            id: "notifications",
-            label: "Notifications",
-            badge: unreadCount > 0 ? unreadCount : null,
-          },
-        ]
-      : []),
   ];
 
   return (

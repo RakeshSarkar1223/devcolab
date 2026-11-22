@@ -23,5 +23,21 @@ public class KafkaTopicConfig {
                 .build();
     }
 
+    @Bean
+    public NewTopic projectCreatedTopic() {
+        return TopicBuilder.name("project-created")
+                .partitions(3)
+                .replicas(1)
+                .build();
+    }
+
+    @Bean
+    public NewTopic projectDeletedTopic() {
+        return TopicBuilder.name("project-deleted")
+                .partitions(3)
+                .replicas(1)
+                .build();
+    }
+
 
 }

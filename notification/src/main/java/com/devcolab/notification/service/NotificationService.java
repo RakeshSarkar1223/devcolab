@@ -111,6 +111,10 @@ public class NotificationService {
             throw new ForbiddenException("You do not have permission to modify this notification");
         }
 
+        if (notification.getType() != null && !"PROJECT_INVITATION".equalsIgnoreCase(notification.getType())) {
+            throw new IllegalArgumentException("Only project invitations can have their status updated");
+        }
+
         if (status != null && !status.isBlank()) {
             notification.setStatus(status.toUpperCase().trim());
         }

@@ -167,4 +167,27 @@ class NotificationServiceTest {
                 notificationService.deleteNotification(notificationId, otherUser)
         );
     }
+
+    @Test
+    void testUpdateStatusSuccess() {
+        sampleNotification.setType("PROJECT_INVITATION");
+        when(notificationRepository.findById(notificationId)).thenReturn(Optional.of(sampleNotification));
+        when(notificationRepository.save(any(Notification.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        NotificationResponse response = notificationService.updateStatus(notificationId, "ACCEPTED", userId);
+
+        assertNotNull(response);
+        assertEquals("ACCEPTED", response.getStatus());
+        assertTrue(response.isRead());
+    }
+
+    @Test
+    void testUpdateStatusRejectsNonInvitation() {
+        sampleNotification.setType("PULL_REQUEST_MERGED");
+        when(notificationRepository.findById(notificationId)).thenReturn(Optional.of(sampleNotification));
+
+        assertThrows(IllegalArgumentException.class, () ->
+                notificationService.updateStatus(notificationId, "ACCEPTED", userId)
+        );
+    }
 }

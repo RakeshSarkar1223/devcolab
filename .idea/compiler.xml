@@ -10,6 +10,7 @@
         <module name="apigateway" />
         <module name="notification" />
         <module name="projectservice" />
+        <module name="repo-service" />
       </profile>
       <profile name="Annotation profile for user" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
@@ -39,6 +40,7 @@
       <module name="eurekaserver" options="-parameters" />
       <module name="notification" options="-parameters" />
       <module name="projectservice" options="-parameters" />
+      <module name="repo-service" options="-parameters" />
       <module name="user" options="-parameters" />
     </option>
   </component>

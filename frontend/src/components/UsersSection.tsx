@@ -3,8 +3,11 @@
 import React, { useState, useEffect } from "react";
 import { userApi } from "@/lib/api";
 import { UserProfile, UserRequest } from "@/types";
+import { useUserProfile, computeProfileStats } from "@/context/UserProfileContext";
+import ProfilePercentWheel from "@/components/ProfilePercentWheel";
 
 export default function UsersSection() {
+  const { refreshProfile } = useUserProfile();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -72,6 +75,7 @@ export default function UsersSection() {
         avatar_link: "",
       });
       fetchUsers();
+      refreshProfile();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to save user profile");
     }
@@ -100,6 +104,7 @@ export default function UsersSection() {
       await userApi.delete(id);
       setSuccess(`User #${id} deleted successfully`);
       fetchUsers();
+      refreshProfile();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to delete user");
     }
@@ -394,7 +399,9 @@ export default function UsersSection() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                {users.map((u) => (
+                {users.map((u) => {
+                  const userStats = computeProfileStats(u);
+                  return (
                   <tr
                     key={u.id}
                     className="hover:bg-zinc-50/70 dark:hover:bg-zinc-800/40 transition-colors"
@@ -403,11 +410,27 @@ export default function UsersSection() {
                       #{u.id}
                     </td>
                     <td className="py-2.5 px-3">
-                      <div className="font-medium text-zinc-900 dark:text-zinc-100">
-                        {u.name || "—"}
-                      </div>
-                      <div className="text-[11px] text-zinc-500 font-mono">
-                        {u.email}
+                      <div className="flex items-center gap-2.5">
+                        <ProfilePercentWheel
+                          percentage={userStats.percentage}
+                          size={30}
+                          strokeWidth={2.5}
+                          variant="avatar-ring"
+                          avatarUrl={u.avatar_link}
+                          name={u.name}
+                          email={u.email}
+                        />
+                        <div>
+                          <div className="flex items-center gap-1.5 font-medium text-zinc-900 dark:text-zinc-100">
+                            <span>{u.name || "—"}</span>
+                            <span className="text-[10px] font-mono text-zinc-400">
+                              ({userStats.percentage}%)
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-zinc-500 font-mono">
+                            {u.email}
+                          </div>
+                        </div>
                       </div>
                     </td>
                     <td className="py-2.5 px-3">
@@ -450,7 +473,8 @@ export default function UsersSection() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

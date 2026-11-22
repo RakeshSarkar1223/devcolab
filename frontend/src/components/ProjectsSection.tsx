@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { projectApi } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import RepositoryViewer from "@/components/RepositoryViewer";
 import {
   MemberRole,
   MemberStatus,
@@ -46,6 +47,7 @@ export default function ProjectsSection({ onNavigateToAuth }: ProjectsSectionPro
 
   // Project details & members panel
   const [selectedProject, setSelectedProject] = useState<ProjectDetailResponse | null>(null);
+  const [projectActiveTab, setProjectActiveTab] = useState<"code" | "members">("code");
   const [detailsLoading, setDetailsLoading] = useState(false);
 
   // Owner "Add Member Directly / Invite" form state
@@ -200,9 +202,10 @@ export default function ProjectsSection({ onNavigateToAuth }: ProjectsSectionPro
     }
   };
 
-  const handleOpenDetails = async (id: number) => {
+  const handleOpenDetails = async (id: number, initialTab: "code" | "members" = "code") => {
     setDetailsLoading(true);
     setError(null);
+    setProjectActiveTab(initialTab);
     try {
       const data = await projectApi.getDetails(id, currentUser?.id);
       setSelectedProject(data);
@@ -676,16 +679,24 @@ export default function ProjectsSection({ onNavigateToAuth }: ProjectsSectionPro
                   </span>
 
                   <div className="flex items-center gap-1.5">
+                    {/* Open Code / Repository View */}
+                    <button
+                      onClick={() => handleOpenDetails(p.id, "code")}
+                      className="px-2.5 py-1 rounded font-semibold text-xs bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center gap-1 shadow-sm"
+                    >
+                      ⟨/⟩ Code
+                    </button>
+
                     {/* View Details / Join Action */}
                     <button
-                      onClick={() => handleOpenDetails(p.id)}
+                      onClick={() => handleOpenDetails(p.id, "members")}
                       className={`px-2.5 py-1 rounded font-medium text-xs transition-colors ${
                         isOwner
                           ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 hover:opacity-90"
                           : "bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200"
                       }`}
                     >
-                      {isOwner ? "👑 Manage Members →" : "View & Join →"}
+                      {isOwner ? "👑 Team" : "Members"}
                     </button>
 
                     {/* ONLY Owner can Edit or Delete */}
@@ -750,9 +761,45 @@ export default function ProjectsSection({ onNavigateToAuth }: ProjectsSectionPro
             </button>
           </div>
 
-          {/* ========================================================= */}
-          {/* OWNER VIEW: FULL MEMBER MANAGEMENT & APPROVAL CONTROLS    */}
-          {/* ========================================================= */}
+          {/* View Switcher: Code vs Members */}
+          <div className="flex items-center gap-2 border-b border-zinc-200 dark:border-zinc-800 pb-3 mt-4">
+            <button
+              onClick={() => setProjectActiveTab("code")}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${
+                projectActiveTab === "code"
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+              }`}
+            >
+              ⟨/⟩ Code & Repository (Monaco)
+            </button>
+            <button
+              onClick={() => setProjectActiveTab("members")}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${
+                projectActiveTab === "members"
+                  ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-sm"
+                  : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+              }`}
+            >
+              👥 Team & Members ({selectedProject.members?.length || 0})
+            </button>
+          </div>
+
+          {projectActiveTab === "code" ? (
+            <div className="mt-4">
+              <RepositoryViewer
+                projectId={selectedProject.id}
+                projectName={selectedProject.name}
+                isOwner={isSelectedProjectOwner}
+                ownerId={selectedProject.ownerId}
+                onClose={() => setSelectedProject(null)}
+              />
+            </div>
+          ) : (
+            <>
+              {/* ========================================================= */}
+              {/* OWNER VIEW: FULL MEMBER MANAGEMENT & APPROVAL CONTROLS    */}
+              {/* ========================================================= */}
           {isSelectedProjectOwner ? (
             <div className="mt-5 space-y-4">
               <div className="flex items-center justify-between">
@@ -1052,6 +1099,8 @@ export default function ProjectsSection({ onNavigateToAuth }: ProjectsSectionPro
                 </div>
               )}
             </div>
+          )}
+          </>
           )}
         </div>
       )}

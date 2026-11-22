@@ -7,6 +7,7 @@ import AuthSection from "@/components/AuthSection";
 import UsersSection from "@/components/UsersSection";
 import ProjectsSection from "@/components/ProjectsSection";
 import NotificationsSection from "@/components/NotificationsSection";
+import ProfileEditModal from "@/components/ProfileEditModal";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<string>("projects");
@@ -15,6 +16,9 @@ export default function Home() {
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex flex-col font-sans">
       {/* Top Navigation */}
       <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
+
+      {/* Profile Edit Modal Dialog */}
+      <ProfileEditModal />
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8">
@@ -30,7 +34,10 @@ export default function Home() {
           <ProjectsSection onNavigateToAuth={() => setActiveTab("auth")} />
         )}
         {activeTab === "notifications" && (
-          <NotificationsSection onNavigateToAuth={() => setActiveTab("auth")} />
+          <NotificationsSection
+            onNavigateToAuth={() => setActiveTab("auth")}
+            onNavigateToProjects={() => setActiveTab("projects")}
+          />
         )}
       </main>
 

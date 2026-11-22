@@ -5,6 +5,8 @@ import com.devcolab.projectservice.dto.ProjectRequest;
 import com.devcolab.projectservice.dto.ProjectResponse;
 import com.devcolab.projectservice.dto.UpdateMemberRequest;
 import com.devcolab.projectservice.event.InvitationResponseEvent;
+import com.devcolab.projectservice.event.ProjectCreatedEvent;
+import com.devcolab.projectservice.event.ProjectDeletedEvent;
 import com.devcolab.projectservice.event.ProjectInvitationEvent;
 import com.devcolab.projectservice.exception.ForbiddenException;
 import com.devcolab.projectservice.exception.ResourceNotFoundException;
@@ -20,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -54,6 +57,14 @@ public class ProjectService {
                 .build();
 
         projectMemberRepository.save(ownerMember);
+
+        // Publish ProjectCreatedEvent for auto-creating git repository in repo-service
+        publisher.publishProjectCreated(ProjectCreatedEvent.builder()
+                .projectId(savedProject.getId())
+                .projectName(savedProject.getName())
+                .ownerId(savedProject.getOwnerId())
+                .createdAt(LocalDateTime.now())
+                .build());
 
         return savedProject;
     }
@@ -152,7 +163,34 @@ public class ProjectService {
 
     @Transactional
     public void deleteProject(Long id) {
+        deleteProject(id, null);
+    }
+
+    @Transactional
+    public void deleteProject(Long id, Long userId) {
         Project project = getProjectById(id);
+
+        if (userId != null && !project.getOwnerId().equals(userId)) {
+            throw new ForbiddenException("Only the project owner can delete this project.");
+        }
+
+        // Fetch all members before deleting to notify them
+        List<ProjectMember> members = projectMemberRepository.findByProjectId(project.getId());
+        List<Long> memberUserIds = members.stream()
+                .map(ProjectMember::getUserId)
+                .filter(uid -> !uid.equals(project.getOwnerId()))
+                .distinct()
+                .toList();
+
+        // Publish deletion event so notification service can alert all members
+        publisher.publishProjectDeleted(ProjectDeletedEvent.builder()
+                .projectId(project.getId())
+                .projectName(project.getName())
+                .ownerId(project.getOwnerId())
+                .memberUserIds(memberUserIds)
+                .timestamp(LocalDateTime.now())
+                .build());
+
         projectMemberRepository.deleteByProjectId(project.getId());
         projectRepository.delete(project);
     }

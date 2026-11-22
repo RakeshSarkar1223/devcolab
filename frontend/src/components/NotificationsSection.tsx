@@ -7,6 +7,7 @@ import { notificationApi } from "@/lib/api";
 
 interface NotificationsSectionProps {
   onNavigateToAuth?: () => void;
+  onNavigateToProjects?: () => void;
 }
 
 const TEMPLATES = [
@@ -16,8 +17,43 @@ const TEMPLATES = [
   "🔔 Reminder: Project sprint review starts in 30 minutes.",
 ];
 
+function isProjectInvitation(n: { type?: string; message?: string; projectId?: number }): boolean {
+  if (n.type === "PROJECT_INVITATION") return true;
+  if (!n.type && Boolean(n.projectId)) {
+    const msg = n.message?.toLowerCase() || "";
+    if (msg.includes("pull request") || msg.includes("merged") || msg.includes("commit") || msg.includes("deleted")) {
+      return false;
+    }
+    return msg.includes("invited you to join") || msg.includes("invited you");
+  }
+  return false;
+}
+
+function isPullRequestEvent(n: { type?: string; message?: string }): boolean {
+  if (n.type?.startsWith("PULL_REQUEST_")) return true;
+  const msg = n.message?.toLowerCase() || "";
+  return msg.includes("pull request") || msg.includes("merged into");
+}
+
+function getPullRequestStatus(n: { type?: string; message?: string; status?: string }): "MERGED" | "CREATED" | "CLOSED" | null {
+  if (n.type === "PULL_REQUEST_MERGED" || n.message?.toLowerCase().includes("merged into")) {
+    return "MERGED";
+  }
+  if (n.type === "PULL_REQUEST_CLOSED" || n.message?.toLowerCase().includes("closed without merging")) {
+    return "CLOSED";
+  }
+  if (n.type === "PULL_REQUEST_CREATED" || n.message?.toLowerCase().includes("submitted pull request")) {
+    return "CREATED";
+  }
+  if (n.status === "MERGED" || n.status === "CLOSED" || n.status === "CREATED") {
+    return n.status as "MERGED" | "CREATED" | "CLOSED";
+  }
+  return null;
+}
+
 export default function NotificationsSection({
   onNavigateToAuth,
+  onNavigateToProjects,
 }: NotificationsSectionProps) {
   const { currentUser, isAuthenticated } = useAuth();
   const {
@@ -217,6 +253,14 @@ export default function NotificationsSection({
       {/* Top Banner & Header */}
       <div className="p-5 rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
+          {onNavigateToProjects && (
+            <button
+              onClick={onNavigateToProjects}
+              className="mb-2 text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 flex items-center gap-1.5 cursor-pointer font-medium"
+            >
+              &larr; Back to Projects & Teams
+            </button>
+          )}
           <div className="flex items-center gap-2">
             <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
               Notification Hub
@@ -836,6 +880,9 @@ export default function NotificationsSection({
                   timeStyle: "short",
                 }
               );
+              const isInvitation = isProjectInvitation(n);
+              const isPR = isPullRequestEvent(n);
+              const prStatus = isPR ? getPullRequestStatus(n) : null;
 
               return (
                 <div
@@ -852,24 +899,60 @@ export default function NotificationsSection({
                       <span
                         className={`inline-flex items-center justify-center h-7 w-7 rounded-full ${
                           !n.read
-                            ? "bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300"
+                            ? isPR
+                              ? "bg-purple-100 text-purple-700 dark:bg-purple-900/60 dark:text-purple-300"
+                              : isInvitation
+                              ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300"
+                              : "bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300"
                             : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"
                         }`}
                       >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-3.5 w-3.5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={2}
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                          />
-                        </svg>
+                        {isPR ? (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-3.5 w-3.5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M8 7v10M8 7a2 2 0 100-4 2 2 0 000 4zm0 10a2 2 0 100 4 2 2 0 000-4zm8-6a2 2 0 100-4 2 2 0 000 4zm0 0v2a4 4 0 01-4 4"
+                            />
+                          </svg>
+                        ) : isInvitation ? (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-3.5 w-3.5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+                            />
+                          </svg>
+                        ) : (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-3.5 w-3.5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                            />
+                          </svg>
+                        )}
                       </span>
                     </div>
 
@@ -885,9 +968,50 @@ export default function NotificationsSection({
                           {!n.read ? "NEW / UNREAD" : "READ"}
                         </span>
 
-                        {(n.type === "PROJECT_INVITATION" || n.projectId) && (
+                        {isInvitation && (
                           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 dark:bg-indigo-950/70 dark:text-indigo-300">
                             PROJECT INVITATION
+                          </span>
+                        )}
+
+                        {isPR && (
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-950/70 dark:text-purple-300 flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M8 7v10M8 7a2 2 0 100-4 2 2 0 000 4zm0 10a2 2 0 100 4 2 2 0 000-4zm8-6a2 2 0 100-4 2 2 0 000 4zm0 0v2a4 4 0 01-4 4" />
+                            </svg>
+                            PULL REQUEST
+                          </span>
+                        )}
+
+                        {isPR && prStatus && (
+                          <span
+                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                              prStatus === "MERGED"
+                                ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300"
+                                : prStatus === "CLOSED"
+                                ? "bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-300"
+                                : "bg-sky-100 text-sky-800 dark:bg-sky-950/70 dark:text-sky-300"
+                            }`}
+                          >
+                            {prStatus}
+                          </span>
+                        )}
+
+                        {n.type === "INVITATION_RESPONSE" && (
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300">
+                            INVITATION RESPONSE
+                          </span>
+                        )}
+
+                        {n.type === "PROJECT_DELETED" && (
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-300">
+                            PROJECT DELETED
+                          </span>
+                        )}
+
+                        {n.projectId && (
+                          <span className="text-[10px] text-zinc-500 font-mono">
+                            Project #{n.projectId}
                           </span>
                         )}
 
@@ -911,7 +1035,7 @@ export default function NotificationsSection({
                       </p>
 
                       {/* Project Invitation Actions / Status */}
-                      {(n.type === "PROJECT_INVITATION" || n.projectId) && (
+                      {isInvitation && (
                         <div className="mt-3">
                           {n.status === "ACCEPTED" ? (
                             <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-md border border-emerald-200 dark:border-emerald-800">

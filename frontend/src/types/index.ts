@@ -162,3 +162,79 @@ export interface NotificationRequest {
   message: string;
 }
 
+// ==========================================
+// Repository / Monaco Editor Types
+// ==========================================
+export interface Branch {
+  name: string;
+  isDefault: boolean;
+  latestCommitHash: string;
+  latestCommitMessage: string;
+  authorName: string;
+  commitDate: string;
+}
+
+export interface FileNode {
+  name: string;
+  path: string;
+  type: "FILE" | "DIRECTORY";
+  size: number;
+  children?: FileNode[];
+}
+
+export interface FileContent {
+  path: string;
+  branch: string;
+  content: string;
+  size: number;
+}
+
+export interface CommitFileRequest {
+  branch: string;
+  path: string;
+  content: string;
+  commitMessage: string;
+  authorName?: string;
+  authorEmail?: string;
+}
+
+export interface CreateBranchRequest {
+  branchName: string;
+  baseBranch?: string;
+}
+
+export interface PullRequest {
+  id: number;
+  projectId: number;
+  title: string;
+  description?: string;
+  sourceBranch: string;
+  targetBranch: string;
+  authorId: number;
+  authorName?: string;
+  ownerId?: number;
+  status: "OPEN" | "MERGED" | "CLOSED";
+  hasConflicts?: boolean;
+  createdAt: string;
+  mergedAt?: string;
+  mergedByUserId?: number;
+}
+
+export interface CreatePullRequestRequest {
+  title: string;
+  description?: string;
+  sourceBranch: string;
+  targetBranch?: string;
+  ownerId?: number;
+}
+
+export interface DiffResult {
+  sourceBranch: string;
+  targetBranch: string;
+  rawDiff: string;
+  changedFiles: string[];
+  hasConflicts: boolean;
+  conflictingFiles: string[];
+}
+
+

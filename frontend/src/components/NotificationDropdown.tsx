@@ -34,6 +34,40 @@ function formatTimeAgo(isoString: string): string {
   }
 }
 
+function isProjectInvitation(n: { type?: string; message?: string; projectId?: number }): boolean {
+  if (n.type === "PROJECT_INVITATION") return true;
+  if (!n.type && Boolean(n.projectId)) {
+    const msg = n.message?.toLowerCase() || "";
+    if (msg.includes("pull request") || msg.includes("merged") || msg.includes("commit") || msg.includes("deleted")) {
+      return false;
+    }
+    return msg.includes("invited you to join") || msg.includes("invited you");
+  }
+  return false;
+}
+
+function isPullRequestEvent(n: { type?: string; message?: string }): boolean {
+  if (n.type?.startsWith("PULL_REQUEST_")) return true;
+  const msg = n.message?.toLowerCase() || "";
+  return msg.includes("pull request") || msg.includes("merged into");
+}
+
+function getPullRequestStatus(n: { type?: string; message?: string; status?: string }): "MERGED" | "CREATED" | "CLOSED" | null {
+  if (n.type === "PULL_REQUEST_MERGED" || n.message?.toLowerCase().includes("merged into")) {
+    return "MERGED";
+  }
+  if (n.type === "PULL_REQUEST_CLOSED" || n.message?.toLowerCase().includes("closed without merging")) {
+    return "CLOSED";
+  }
+  if (n.type === "PULL_REQUEST_CREATED" || n.message?.toLowerCase().includes("submitted pull request")) {
+    return "CREATED";
+  }
+  if (n.status === "MERGED" || n.status === "CLOSED" || n.status === "CREATED") {
+    return n.status as "MERGED" | "CREATED" | "CLOSED";
+  }
+  return null;
+}
+
 export default function NotificationDropdown({
   onNavigateToNotifications,
 }: NotificationDropdownProps) {
@@ -352,6 +386,10 @@ export default function NotificationDropdown({
             ) : (
               displayedNotifications.map((n) => {
                 const isItemProcessing = processingId === n.id;
+                const isInvitation = isProjectInvitation(n);
+                const isPR = isPullRequestEvent(n);
+                const prStatus = isPR ? getPullRequestStatus(n) : null;
+
                 return (
                   <div
                     key={n.id}
@@ -369,7 +407,11 @@ export default function NotificationDropdown({
                       <span
                         className={`block h-2 w-2 rounded-full ${
                           !n.read
-                            ? "bg-blue-500 shadow-xs"
+                            ? isPR
+                              ? "bg-purple-500 shadow-xs"
+                              : isInvitation
+                              ? "bg-indigo-500 shadow-xs"
+                              : "bg-blue-500 shadow-xs"
                             : "bg-zinc-300 dark:bg-zinc-700"
                         }`}
                       />
@@ -387,8 +429,32 @@ export default function NotificationDropdown({
                         {n.message}
                       </p>
 
+                      {/* Pull Request Status Badge */}
+                      {isPR && (
+                        <div className="mt-1.5 flex items-center gap-1.5">
+                          <span
+                            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                              prStatus === "MERGED"
+                                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                                : prStatus === "CLOSED"
+                                ? "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300"
+                                : "bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300"
+                            }`}
+                          >
+                            <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M8 7v10M8 7a2 2 0 100-4 2 2 0 000 4zm0 10a2 2 0 100 4 2 2 0 000-4zm8-6a2 2 0 100-4 2 2 0 000 4zm0 0v2a4 4 0 01-4 4" />
+                            </svg>
+                            {prStatus === "MERGED"
+                              ? "PR Merged"
+                              : prStatus === "CLOSED"
+                              ? "PR Closed"
+                              : "PR Open"}
+                          </span>
+                        </div>
+                      )}
+
                       {/* Project Invitation Actions / Status */}
-                      {(n.type === "PROJECT_INVITATION" || n.projectId) && (
+                      {isInvitation && (
                         <div className="mt-2 pt-1 border-t border-zinc-100 dark:border-zinc-800">
                           {n.status === "ACCEPTED" ? (
                             <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded">
@@ -425,6 +491,11 @@ export default function NotificationDropdown({
 
                       <div className="mt-1 flex items-center gap-2 text-[10px] text-zinc-400">
                         <span>{formatTimeAgo(n.createdAt)}</span>
+                        {n.projectId && (
+                          <span className="font-mono">
+                            • Project #{n.projectId}
+                          </span>
+                        )}
                         {!n.read && (
                           <span className="text-blue-600 dark:text-blue-400 font-medium">
                             • Unread

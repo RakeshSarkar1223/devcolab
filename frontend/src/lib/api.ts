@@ -1,6 +1,13 @@
 import {
   AuthResponse,
+  Branch,
+  CommitFileRequest,
+  CreateBranchRequest,
+  CreatePullRequestRequest,
   CurrentUser,
+  DiffResult,
+  FileContent,
+  FileNode,
   LoginRequest,
   Notification,
   NotificationRequest,
@@ -9,6 +16,7 @@ import {
   ProjectMember,
   ProjectMemberRequest,
   ProjectRequest,
+  PullRequest,
   RegisterRequest,
   UnreadCountResponse,
   UpdateMemberRequest,
@@ -358,6 +366,89 @@ export const notificationApi = {
     return request<Notification>("/api/notifications", {
       method: "POST",
       body: JSON.stringify(data),
+    });
+  },
+};
+
+// ==========================================
+// Repository Service API
+// ==========================================
+export const repoApi = {
+  async initRepo(projectId: number): Promise<{ message: string; projectId: number; defaultBranch: string }> {
+    return request<{ message: string; projectId: number; defaultBranch: string }>(`/api/repos/${projectId}/init`, {
+      method: "POST",
+    });
+  },
+
+  async checkRepoExists(projectId: number): Promise<{ projectId: number; exists: boolean }> {
+    return request<{ projectId: number; exists: boolean }>(`/api/repos/${projectId}/exists`);
+  },
+
+  async getBranches(projectId: number): Promise<Branch[]> {
+    return request<Branch[]>(`/api/repos/${projectId}/branches`);
+  },
+
+  async createBranch(projectId: number, data: CreateBranchRequest): Promise<{ message: string; branch: string }> {
+    return request<{ message: string; branch: string }>(`/api/repos/${projectId}/branches`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async getTree(projectId: number, branch?: string, subPath?: string): Promise<FileNode[]> {
+    const params = new URLSearchParams();
+    if (branch) params.set("branch", branch);
+    if (subPath) params.set("subPath", subPath);
+    const query = params.toString() ? `?${params.toString()}` : "";
+    return request<FileNode[]>(`/api/repos/${projectId}/tree${query}`);
+  },
+
+  async getFileContent(projectId: number, branch: string, path: string): Promise<FileContent> {
+    const params = new URLSearchParams({ branch, path });
+    return request<FileContent>(`/api/repos/${projectId}/blob?${params.toString()}`);
+  },
+
+  async commitFile(projectId: number, data: CommitFileRequest): Promise<{ message: string; branch: string; path: string }> {
+    return request<{ message: string; branch: string; path: string }>(`/api/repos/${projectId}/commit`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async getBranchDiff(projectId: number, sourceBranch: string, targetBranch: string = "main"): Promise<DiffResult> {
+    const params = new URLSearchParams({ sourceBranch, targetBranch });
+    return request<DiffResult>(`/api/repos/${projectId}/diff?${params.toString()}`);
+  },
+
+  async createPullRequest(projectId: number, data: CreatePullRequestRequest): Promise<PullRequest> {
+    return request<PullRequest>(`/api/repos/${projectId}/pull-requests`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async getPullRequests(projectId: number, status?: "OPEN" | "MERGED" | "CLOSED"): Promise<PullRequest[]> {
+    const query = status ? `?status=${status}` : "";
+    return request<PullRequest[]>(`/api/repos/${projectId}/pull-requests${query}`);
+  },
+
+  async getPullRequest(projectId: number, prId: number): Promise<PullRequest> {
+    return request<PullRequest>(`/api/repos/${projectId}/pull-requests/${prId}`);
+  },
+
+  async getPullRequestDiff(projectId: number, prId: number): Promise<DiffResult> {
+    return request<DiffResult>(`/api/repos/${projectId}/pull-requests/${prId}/diff`);
+  },
+
+  async mergePullRequest(projectId: number, prId: number): Promise<PullRequest> {
+    return request<PullRequest>(`/api/repos/${projectId}/pull-requests/${prId}/merge`, {
+      method: "POST",
+    });
+  },
+
+  async closePullRequest(projectId: number, prId: number): Promise<PullRequest> {
+    return request<PullRequest>(`/api/repos/${projectId}/pull-requests/${prId}/close`, {
+      method: "POST",
     });
   },
 };

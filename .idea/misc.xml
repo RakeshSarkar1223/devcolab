@@ -10,6 +10,7 @@
         <option value="$PROJECT_DIR$/eurekaserver/pom.xml" />
         <option value="$PROJECT_DIR$/projectservice/pom.xml" />
         <option value="$PROJECT_DIR$/notification/pom.xml" />
+        <option value="$PROJECT_DIR$/repo-service/pom.xml" />
       </list>
     </option>
   </component>
