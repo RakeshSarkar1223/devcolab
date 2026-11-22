@@ -21,19 +21,12 @@
 
 ---
 
-## 📸 Application Screenshots
-
-> 💡 **How to add screenshots:** When editing this `README.md` directly on GitHub, place your cursor on the designated comment line below each section and press **`Ctrl + V`** to paste your screenshot. GitHub will automatically upload and insert the image link!
-
 ---
 
 ### 1. Projects Dashboard & Repository Explorer
 Browse public and private repositories, search projects, create new repositories, and toggle team filters.
 
-<!-- ================================================================= -->
-<!-- 📸 PASTE SCREENSHOT 1 HERE: Projects Dashboard & Filters           -->
-<!-- (On GitHub web editor: Click the line below and press Ctrl+V)      -->
-<!-- ================================================================= -->
+<img width="1917" height="922" alt="image" src="https://github.com/user-attachments/assets/b871d7fa-e701-4f55-a04a-0a609ddc16a7" />
 
 
 
@@ -42,10 +35,7 @@ Browse public and private repositories, search projects, create new repositories
 ### 2. In-Browser Monaco Code Editor & File Tree
 Navigate directory trees, switch branches, create files, edit code with full syntax highlighting (JS, TS, Python, Java, JSON, etc.), and commit directly to the repository.
 
-<!-- ================================================================= -->
-<!-- 📸 PASTE SCREENSHOT 2 HERE: Monaco Code Editor & File Explorer     -->
-<!-- (On GitHub web editor: Click the line below and press Ctrl+V)      -->
-<!-- ================================================================= -->
+<img width="1917" height="832" alt="image" src="https://github.com/user-attachments/assets/4f76bb39-72e4-4235-82de-621ee25b93cc" />
 
 
 
@@ -54,10 +44,7 @@ Navigate directory trees, switch branches, create files, edit code with full syn
 ### 3. Pull Requests & Visual Git Diff Viewer
 Inspect changes between branches using Monaco Diff Editor, detect conflicts, review commits, and execute one-click PR merges.
 
-<!-- ================================================================= -->
-<!-- 📸 PASTE SCREENSHOT 3 HERE: Pull Request & Side-by-Side Diff View  -->
-<!-- (On GitHub web editor: Click the line below and press Ctrl+V)      -->
-<!-- ================================================================= -->
+<img width="1917" height="872" alt="image" src="https://github.com/user-attachments/assets/0df58140-ca9e-4305-ae6b-052f9a25e556" />
 
 
 
@@ -66,22 +53,13 @@ Inspect changes between branches using Monaco Diff Editor, detect conflicts, rev
 ### 4. Team Collaboration & Role-Based Access Control
 Invite team members by User ID, assign roles (`OWNER`, `DEVELOPER`, `VIEWER`), and manage project membership statuses (`PENDING`, `ACTIVE`, `INVITED`, `REMOVED`).
 
-<!-- ================================================================= -->
-<!-- 📸 PASTE SCREENSHOT 4 HERE: Project Team Members & Roles Modal     -->
-<!-- (On GitHub web editor: Click the line below and press Ctrl+V)      -->
-<!-- ================================================================= -->
-
-
+<img width="1917" height="832" alt="image" src="https://github.com/user-attachments/assets/43fcb8e6-7a09-4682-bfe6-e1db512aadd8" />
 
 ---
 
 ### 5. Notification Center & Interactive Action Cards
 Receive real-time alerts for project invitations and pull requests. Accept or reject project invitations directly from notification cards with unread badges.
-
-<!-- ================================================================= -->
-<!-- 📸 PASTE SCREENSHOT 5 HERE: Notifications Center & Action Cards    -->
-<!-- (On GitHub web editor: Click the line below and press Ctrl+V)      -->
-<!-- ================================================================= -->
+<img width="1917" height="832" alt="image" src="https://github.com/user-attachments/assets/2efbb3dc-0aca-469c-a9ce-06261de04c90" />
 
 
 
@@ -90,26 +68,10 @@ Receive real-time alerts for project invitations and pull requests. Accept or re
 ### 6. Developer Profile & Completion Wheel
 Interactive user profile modal featuring an SVG circular progress wheel that tracks profile completion, highlights missing details, and displays collaboration readiness tiers.
 
-<!-- ================================================================= -->
-<!-- 📸 PASTE SCREENSHOT 6 HERE: Profile Modal & Completion Wheel       -->
-<!-- (On GitHub web editor: Click the line below and press Ctrl+V)      -->
-<!-- ================================================================= -->
+<img width="1917" height="901" alt="image" src="https://github.com/user-attachments/assets/845c7c8c-a697-4dad-aad8-0d0da62e376e" />
 
 
 
----
-
-### 7. Microservices Health & Service Registry Console
-Live latency probing and health check dashboard testing connectivity from the API Gateway across all backend microservices.
-
-<!-- ================================================================= -->
-<!-- 📸 PASTE SCREENSHOT 7 HERE: Live Service Health Monitor Dashboard  -->
-<!-- (On GitHub web editor: Click the line below and press Ctrl+V)      -->
-<!-- ================================================================= -->
-
-
-
----
 
 ## 🏛 Architecture & Microservices
 
